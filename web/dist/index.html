@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Model Configurator</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>if(localStorage.getItem('oc-theme')!=='light')document.documentElement.classList.add('dark')</script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','system-ui','sans-serif'],mono:['JetBrains Mono','monospace']}}}}
+</script>
+<style>
+*{scrollbar-width:thin}
+:root {
+  --bg:#ffffff; --bg-alt:#f8fafc; --card:#ffffff; --card-selected:rgba(16,185,129,.04);
+  --border:#e8eaed; --border-hl:#10b981; --text:#334155; --text-h:#0f172a;
+  --text-sub:#64748b; --text-mute:#94a3b8; --input-bg:#ffffff; --input-border:#e2e8f0;
+  --modal-bg:#ffffff; --overlay:rgba(0,0,0,.2); --hover:rgba(0,0,0,.02);
+  --badge-blue-bg:#eff6ff; --badge-blue-text:#1d4ed8;
+  --badge-purple-bg:#faf5ff; --badge-purple-text:#7c3aed;
+  --badge-amber-bg:#fffbeb; --badge-amber-text:#b45309;
+  --icon-blue-bg:#eff6ff; --icon-blue-text:#2563eb;
+  --icon-purple-bg:#faf5ff; --icon-purple-text:#7c3aed;
+  --bar-bg:rgba(255,255,255,.92);
+  --card-shadow:0 1px 3px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.02);
+  --tip-bg:#1e293b; --tip-text:#f1f5f9;
+}
+.dark {
+  --bg:#020617; --bg-alt:#0f172a; --card:#0f172a; --card-selected:rgba(16,185,129,.06);
+  --border:#1e293b; --border-hl:#10b981; --text:#94a3b8; --text-h:#e2e8f0;
+  --text-sub:#64748b; --text-mute:#475569; --input-bg:#1e293b; --input-border:#334155;
+  --modal-bg:#0f172a; --overlay:rgba(0,0,0,.5); --hover:rgba(255,255,255,.02);
+  --badge-blue-bg:rgba(59,130,246,.1); --badge-blue-text:#60a5fa;
+  --badge-purple-bg:rgba(168,85,247,.1); --badge-purple-text:#c084fc;
+  --badge-amber-bg:rgba(245,158,11,.1); --badge-amber-text:#fbbf24;
+  --icon-blue-bg:rgba(59,130,246,.1); --icon-blue-text:#60a5fa;
+  --icon-purple-bg:rgba(168,85,247,.1); --icon-purple-text:#7c3aed;
+  --bar-bg:rgba(2,6,23,.92);
+  --card-shadow:0 0 0 0 transparent;
+  --tip-bg:#e2e8f0; --tip-text:#0f172a;
+}
+.dark *{scrollbar-color:#334155 transparent}
+html{background:var(--bg)!important;color:var(--text);transition:background .25s,color .25s}
+body{font-family:Inter,system-ui,sans-serif;background:transparent!important}
+.fade-enter-active,.fade-leave-active{transition:opacity .2s ease,transform .2s ease}
+.fade-enter-from,.fade-leave-to{opacity:0;transform:translateY(6px)}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.pulse-dot{animation:pulse-dot 1.5s ease-in-out infinite}
+.oc-header{background:var(--bar-bg);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.oc-card{background:var(--card);border:1px solid var(--border);border-radius:.5rem;transition:border-color .15s;box-shadow:var(--card-shadow)}
+.oc-card-selected{border-color:var(--border-hl);background:var(--card-selected)}
+.oc-card-body:hover{background:var(--hover)}
+.oc-input{width:100%;background:var(--input-bg);border:1px solid var(--input-border);border-radius:.375rem;padding:.5rem .75rem;font-size:.8125rem;color:var(--text-h);outline:none;transition:border-color .15s}
+.oc-input:focus{border-color:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.12)}
+.oc-input::placeholder{color:var(--text-mute)}
+.oc-input:disabled{opacity:.5}
+.oc-select{width:100%;background:var(--input-bg);border:1px solid var(--input-border);border-radius:.375rem;padding:.5rem .75rem;font-size:.8125rem;color:var(--text-h);outline:none}
+.oc-select:focus{border-color:#10b981}
+.oc-modal{background:var(--modal-bg);border:1px solid var(--border);border-radius:.75rem}
+.oc-divider{border-color:var(--border)}
+.oc-row:hover{background:var(--hover)}
+.oc-bar{background:var(--bar-bg);border-top:1px solid var(--border);backdrop-filter:blur(8px)}
+.oc-badge-blue{background:var(--badge-blue-bg);color:var(--badge-blue-text)}
+.oc-badge-purple{background:var(--badge-purple-bg);color:var(--badge-purple-text)}
+.oc-badge-amber{background:var(--badge-amber-bg);color:var(--badge-amber-text)}
+.oc-icon-blue{background:var(--icon-blue-bg);color:var(--icon-blue-text)}
+.oc-icon-purple{background:var(--icon-purple-bg);color:var(--icon-purple-text)}
+.oc-link{color:#10b981}.oc-link:hover{color:#059669}
+.c-h{color:var(--text-h)}.c-t{color:var(--text)}.c-s{color:var(--text-sub)}.c-m{color:var(--text-mute)}
+.bg-brand{background:#10b981}.bg-brand:hover{background:#059669}
+.text-brand{color:#10b981}
+.border-brand{border-color:#10b981}
+.bg-brand-light{background:rgba(16,185,129,.06)}
+.oc-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1.125rem;border-radius:.375rem;font-size:.8125rem;font-weight:500;transition:all .15s;cursor:pointer;white-space:nowrap}
+.oc-btn-primary{background:#10b981;color:#fff}.oc-btn-primary:hover{background:#059669}.oc-btn-primary:disabled{opacity:.5;cursor:default}
+.oc-btn-ghost{color:var(--text-sub);border:1px solid var(--border)}.oc-btn-ghost:hover{border-color:var(--text-mute);color:var(--text-h)}
+.oc-icon-btn{padding:.5rem;border-radius:.375rem;transition:all .15s;color:var(--text-mute);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.oc-icon-btn:hover{color:var(--text-h);background:var(--hover)}
+.oc-icon-btn-danger:hover{color:#ef4444;background:rgba(239,68,68,.06)}
+.step-nav{display:flex;align-items:center;justify-content:space-between;margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border)}
+.oc-help{display:flex;gap:.625rem;padding:.75rem 1rem;border-radius:.5rem;border-left:3px solid rgba(16,185,129,.45);background:rgba(16,185,129,.03);margin-bottom:1.75rem;font-size:.75rem;line-height:1.7;color:var(--text-sub)}
+.oc-help strong{color:var(--text-h);font-weight:600}
+.oc-help ul{margin:.375rem 0 0;padding-left:1rem;list-style:disc}
+.oc-help li{margin-bottom:.125rem}
+.oc-help .oc-help-warn{color:#10b981;font-weight:500;margin-top:.375rem}
+.oc-tip{position:relative;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;font-size:9px;font-weight:700;cursor:help;color:var(--text-mute);background:var(--bg-alt);border:1px solid var(--input-border);flex-shrink:0;margin-left:4px;user-select:none}
+.oc-tip:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--tip-bg);color:var(--tip-text);padding:6px 10px;border-radius:6px;font-size:11px;font-weight:400;line-height:1.5;white-space:normal;width:max-content;max-width:240px;z-index:100;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.oc-tip:hover::before{content:'';position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--tip-bg);z-index:101;pointer-events:none}
+.oc-toast{position:fixed;bottom:4.5rem;left:50%;transform:translateX(-50%);padding:.625rem 1rem;border-radius:.5rem;font-size:.75rem;font-weight:500;z-index:60;display:flex;align-items:center;gap:.5rem;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.oc-toast-ok{background:#10b981;color:#fff}
+.oc-toast-err{background:#ef4444;color:#fff}
+</style>
+</head>
+<body>
+<div id="app" class="min-h-screen">
+
+<header class="oc-header sticky top-0 z-40">
+  <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-brand flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <span class="c-h text-sm font-semibold tracking-tight">{{t('appName')}}</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div v-if="connected" class="flex items-center gap-1.5 mr-1">
+        <span class="w-2 h-2 rounded-full pulse-dot" style="background:#10b981"></span>
+        <span class="c-m text-xs">{{ connectionMode==='local'?t('local'):connectionMode==='docker'?'Docker':t('remote') }}</span>
+      </div>
+      <button @click="toggleLang" class="c-m text-xs px-2 py-1 rounded transition hover:opacity-70 font-medium" style="border:1px solid var(--border)" :title="lang==='zh'?'Switch to English':'切换中文'">
+        {{lang==='zh'?'EN':'中'}}
+      </button>
+      <button @click="toggleTheme" class="oc-icon-btn" :title="t('toggleTheme')">
+        <svg v-if="isDark" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        <svg v-else class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-6 py-10">
+
+  <!-- Steps -->
+  <div class="flex items-center gap-2 mb-10" v-if="step<=3">
+    <template v-for="s in 3">
+      <div class="flex items-center gap-2" @click="goToStep(s)" :style="s<step?'cursor:pointer':''">
+        <div :class="['w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all',
+          s<step?'bg-brand text-white':
+          s===step?'ring-2 ring-brand text-brand border border-brand bg-brand-light':'',
+          s<step?'hover:opacity-80':'']"
+          :style="s>step?'background:var(--bg-alt);color:var(--text-mute)':''">
+          <svg v-if="s<step" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span v-else>{{s}}</span>
+        </div>
+        <span :class="['text-xs hidden sm:inline font-medium',s===step?'c-h':'c-m']">
+          {{t('steps')[s-1]}}
+        </span>
+      </div>
+      <div v-if="s<3" class="flex-1 h-px" :style="'background:'+(s<step?'rgba(16,185,129,.4)':'var(--border)')"></div>
+    </template>
+  </div>
+
+  <!-- STEP 1 -->
+  <div v-if="step===1">
+    <h2 class="c-h text-2xl font-semibold mb-1.5">{{t('s1Title')}}</h2>
+    <p class="c-s text-sm mb-6">{{t('s1Desc')}}</p>
+
+    <div class="oc-help">
+      <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+      <div>{{t('s1Help')}}</div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-3 mb-10">
+      <div @click="connectionMode='local';error=''" :class="['oc-card p-5 cursor-pointer',connectionMode==='local'?'oc-card-selected':'']">
+        <div class="flex items-center gap-3">
+          <div class="oc-icon-blue w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <div>
+            <div class="c-h text-sm font-semibold">{{t('local')}}</div>
+            <div class="c-s text-xs mt-0.5">{{t('localDesc')}}</div>
+          </div>
+        </div>
+      </div>
+      <div @click="connectionMode='remote';error=''" :class="['oc-card p-5 cursor-pointer',connectionMode==='remote'?'oc-card-selected':'']">
+        <div class="flex items-center gap-3">
+          <div class="oc-icon-purple w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>
+          </div>
+          <div>
+            <div class="c-h text-sm font-semibold">{{t('remote')}}</div>
+            <div class="c-s text-xs mt-0.5">{{t('remoteDesc')}}</div>
+          </div>
+        </div>
+      </div>
+      <div @click="connectionMode='docker';error=''" :class="['oc-card p-5 cursor-pointer',connectionMode==='docker'?'oc-card-selected':'']">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(14,165,233,.1);color:#0ea5e9">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 17h18M5 17V7a2 2 0 012-2h10a2 2 0 012 2v10"/><rect x="7" y="9" width="3" height="3" rx=".5"/><rect x="10.5" y="9" width="3" height="3" rx=".5"/><rect x="14" y="9" width="3" height="3" rx=".5"/><rect x="7" y="5" width="3" height="3" rx=".5"/><rect x="10.5" y="5" width="3" height="3" rx=".5"/></svg>
+          </div>
+          <div>
+            <div class="c-h text-sm font-semibold">Docker</div>
+            <div class="c-s text-xs mt-0.5">{{t('dockerDesc')}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-10">
+      <label class="c-s block text-xs font-medium mb-2.5">{{t('targetOS')}}</label>
+      <div class="flex gap-2">
+        <button v-for="o in [{id:'linux',l:'Linux',i:'🐧'},{id:'macos',l:'macOS',i:'🍎'},{id:'windows',l:'Windows',i:'🪟'}]"
+          @click="targetOS=o.id"
+          :class="['px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap',
+            targetOS===o.id?'border-brand text-brand bg-brand-light':'c-s']"
+          :style="targetOS===o.id?'border:1px solid #10b981':'border:1px solid var(--border)'">
+          <span>{{o.i}}</span> {{o.l}}
+        </button>
+      </div>
+    </div>
+
+    <transition name="fade">
+      <div v-if="connectionMode==='docker'" class="oc-card p-5 mb-4">
+        <div class="c-s text-xs font-semibold uppercase tracking-wider mb-4">{{t('dockerConn')}}</div>
+        <div class="mb-3">
+          <label class="c-s block text-xs mb-1.5 flex items-center">{{t('containerName')}}<span class="oc-tip" :data-tip="t('tipContainer')">?</span></label>
+          <input v-model="docker.container" placeholder="openclaw" class="oc-input font-mono">
+        </div>
+        <div class="rounded-md p-3 text-[11px] c-s leading-relaxed" style="background:var(--bg-alt);border:1px solid var(--border)">
+          <div class="font-medium c-h mb-1">{{t('dockerHelp1')}}</div>
+          <code class="text-brand">{{t('dockerCmd')}}</code>
+          <div class="mt-2 font-medium c-h mb-1">{{t('dockerHelp2')}}</div>
+          <div>{{t('dockerHelp3')}}</div>
+        </div>
+      </div>
+    </transition>
+    <transition name="fade">
+      <div v-if="connectionMode==='remote'" class="oc-card p-5 mb-4">
+        <div class="c-s text-xs font-semibold uppercase tracking-wider mb-4">{{t('sshConn')}}</div>
+        <div class="grid sm:grid-cols-2 gap-3 mb-3">
+          <div><label class="c-s block text-xs mb-1.5 flex items-center">{{t('host')}}<span class="oc-tip" :data-tip="t('tipHost')">?</span></label><input v-model="ssh.host" placeholder="192.168.1.100" class="oc-input"></div>
+          <div><label class="c-s block text-xs mb-1.5 flex items-center">{{t('port')}}<span class="oc-tip" :data-tip="t('tipPort')">?</span></label><input v-model.number="ssh.port" type="number" class="oc-input"></div>
+        </div>
+        <div class="mb-3"><label class="c-s block text-xs mb-1.5 flex items-center">{{t('username')}}<span class="oc-tip" :data-tip="t('tipUser')">?</span></label><input v-model="ssh.user" placeholder="root" class="oc-input"></div>
+        <div class="mb-3">
+          <label class="c-s block text-xs mb-2">{{t('authMethod')}}</label>
+          <div class="flex gap-2">
+            <button v-for="at in ['password','key']" @click="ssh.authType=at"
+              :class="['px-3 py-1.5 rounded-md text-xs font-medium transition whitespace-nowrap']"
+              :style="ssh.authType===at?'background:rgba(16,185,129,.1);color:#10b981':'background:var(--bg-alt);color:var(--text-sub)'">
+              {{at==='password'?t('password'):t('privateKey')}}
+            </button>
+          </div>
+        </div>
+        <div v-if="ssh.authType==='password'"><label class="c-s block text-xs mb-1.5">{{t('password')}}</label><input v-model="ssh.password" type="password" class="oc-input"></div>
+        <div v-else><label class="c-s block text-xs mb-1.5 flex items-center">{{t('keyPath')}}<span class="oc-tip" :data-tip="t('tipKeyPath')">?</span></label><input v-model="ssh.keyPath" :placeholder="t('keyPathHint')" class="oc-input font-mono"></div>
+      </div>
+    </transition>
+
+    <p v-if="error" class="text-xs text-red-500 mb-3">{{error}}</p>
+    <div class="step-nav">
+      <div></div>
+      <button @click="doConnect" :disabled="connecting" class="oc-btn oc-btn-primary">
+        <svg v-if="connecting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+        {{connecting?t('connecting'):t('nextStep')}}
+        <svg v-if="!connecting" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div v-if="step===2">
+    <h2 class="c-h text-2xl font-semibold mb-1.5">{{t('s2Title')}}</h2>
+    <p class="c-s text-sm mb-6">{{t('s2Desc')}}</p>
+
+    <div class="oc-help">
+      <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+      <div>{{t('s2Help')}}</div>
+    </div>
+
+    <div v-if="detecting" class="flex items-center gap-2.5 text-sm c-s">
+      <svg class="animate-spin w-5 h-5 text-brand" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+      {{t('scanning')}}
+    </div>
+    <div v-else>
+      <div v-if="pathFound" class="rounded-lg p-5 mb-5" style="background:rgba(16,185,129,.04);border:1px solid rgba(16,185,129,.2)">
+        <div class="flex items-center gap-2.5 mb-1">
+          <svg class="w-5 h-5 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+          <span class="text-sm font-medium text-brand">{{t('configFound')}}</span>
+        </div>
+        <p class="c-s text-xs font-mono ml-7">{{detectedPath}}</p>
+      </div>
+      <div v-if="!pathFound" class="rounded-lg p-5 mb-5" style="background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.2)">
+        <div class="flex items-center gap-2.5 mb-2">
+          <svg class="w-5 h-5" style="color:#f59e0b" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
+          <span class="text-sm font-medium" style="color:#f59e0b">{{t('configNotFound')}}</span>
+        </div>
+        <p class="c-s text-xs ml-7">{{t('expected')}}: <code class="c-h">{{detectedPath}}</code></p>
+      </div>
+
+      <div v-if="recentPaths.length>1" class="mb-4">
+        <label class="c-s block text-xs font-medium mb-2">{{t('recentPaths')}}</label>
+        <div class="flex flex-wrap gap-2">
+          <button v-for="rp in recentPaths" :key="rp" @click="customPath=rp;useCustomPath=true"
+            class="text-[11px] px-2.5 py-1.5 rounded-md font-mono transition truncate max-w-xs"
+            :style="'background:var(--bg-alt);border:1px solid var(--border);color:var(--text-sub)'">
+            {{rp}}
+          </button>
+        </div>
+      </div>
+      <div class="mb-4">
+        <button @click="useCustomPath=!useCustomPath" class="text-xs oc-link flex items-center gap-1 mb-2 transition">
+          <svg :class="['w-4 h-4 transition-transform',useCustomPath?'rotate-90':'']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+          {{t('specifyPath')}}
+        </button>
+        <transition name="fade">
+          <div v-if="useCustomPath">
+            <label class="c-s block text-xs mb-1.5">{{t('pathLabel')}}</label>
+            <input v-model="customPath" placeholder="/path/to/openclaw.json" class="oc-input font-mono">
+          </div>
+        </transition>
+      </div>
+
+      <p v-if="error" class="text-xs text-red-500 mb-3">{{error}}</p>
+      <div class="step-nav">
+        <button @click="goBack" class="oc-btn oc-btn-ghost">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+          {{t('prevStep')}}
+        </button>
+        <button @click="confirmPath" :disabled="loadingConfig" class="oc-btn oc-btn-primary">
+          <svg v-if="loadingConfig" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+          {{loadingConfig?t('loading'):t('nextStep')}}
+          <svg v-if="!loadingConfig" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div v-if="step===3" :class="hasChanges?'pb-20':''">
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div class="min-w-0">
+        <h2 class="c-h text-2xl font-semibold mb-1.5">{{t('s3Title')}}</h2>
+        <p class="c-s text-sm">
+          {{Object.keys(providers).length}} {{t('providers')}} · {{totalModels}} {{t('models')}} ·
+          {{t('primaryLabel')}}: <span class="text-brand font-mono text-xs">{{primary||'none'}}</span>
+        </p>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <button @click="exportConfig" class="oc-btn oc-btn-ghost">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5l5 5 5-5m-5 5V3"/></svg>
+          {{t('export')}}
+        </button>
+        <label class="oc-btn oc-btn-ghost cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m14-7l-5-5-5 5m5-5v12"/></svg>
+          {{t('import')}}
+          <input type="file" accept=".json" @change="handleImportFile" style="display:none">
+        </label>
+        <button @click="openSourceModal" class="oc-btn oc-btn-ghost">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          {{t('viewSource')}}
+        </button>
+        <button @click="openAddProvider" class="oc-btn oc-btn-primary">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>
+          {{t('addProvider')}}
+        </button>
+      </div>
+    </div>
+
+    <div class="oc-help">
+      <svg class="w-4 h-4 flex-shrink-0 mt-0.5 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+      <div>
+        <div>{{t('s3Help')}}</div>
+        <ul>
+          <li><strong>Base URL</strong> — {{t('s3HelpUrl')}}</li>
+          <li><strong>API Key</strong> — {{t('s3HelpKey')}}</li>
+          <li><strong>Context Window</strong> — {{t('s3HelpCtx')}}</li>
+          <li><strong>Max Tokens</strong> — {{t('s3HelpMax')}}</li>
+        </ul>
+        <div class="oc-help-warn">{{t('s3HelpSave')}}</div>
+      </div>
+    </div>
+
+    <div v-if="Object.keys(providers).length===0" class="text-center py-20">
+      <div class="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3" style="background:var(--bg-alt)">
+        <svg class="w-7 h-7 c-m" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </div>
+      <p class="c-m text-sm">{{t('noProviders')}}</p>
+    </div>
+
+    <div class="space-y-3">
+      <div v-for="(prov,name) in providers" :key="name" class="oc-card">
+        <div class="px-5 py-4 flex items-center justify-between cursor-pointer oc-card-body" @click="toggleProvider(name)">
+          <div class="flex items-center gap-3.5 min-w-0">
+            <div :class="prov.api==='anthropic-messages'?'oc-icon-purple':'oc-icon-blue'" class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-sm font-bold">
+              {{prov.api==='anthropic-messages'?'A':'O'}}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="c-h text-sm font-semibold truncate">{{name}}</span>
+                <span :class="prov.api==='anthropic-messages'?'oc-badge-purple':prov.api==='openai-codex-responses'?'oc-badge-amber':'oc-badge-blue'" class="px-1.5 py-0.5 text-[10px] rounded font-semibold whitespace-nowrap">{{apiLabel(prov.api)}}</span>
+              </div>
+              <div class="c-m text-xs font-mono truncate">{{prov.baseUrl}}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 flex-shrink-0 ml-3">
+            <span class="c-m text-xs mr-1 whitespace-nowrap">{{prov.models?.length||0}} {{t('models')}}</span>
+            <button @click.stop="testProvider(name)" class="oc-icon-btn" :title="t('testConn')">
+              <svg v-if="testingProvider===name" class="animate-spin w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+              <svg v-else class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </button>
+            <button @click.stop="openEditProvider(name,prov)" class="oc-icon-btn" :title="t('edit')">
+              <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button @click.stop="confirmDeleteProvider(name)" class="oc-icon-btn oc-icon-btn-danger" :title="t('delete')">
+              <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            <svg :class="['w-5 h-5 c-m transition-transform',expandedProviders[name]?'rotate-180':'']" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </div>
+        <transition name="fade">
+          <div v-if="expandedProviders[name]" class="oc-divider border-t">
+            <div class="px-5 py-3 flex justify-between items-center">
+              <span class="c-m text-[10px] uppercase tracking-widest font-semibold">{{t('modelsHeader')}}</span>
+              <button @click="openAddModel(name)" class="text-xs oc-link transition flex items-center gap-1 font-medium whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"/></svg>{{t('add')}}
+              </button>
+            </div>
+            <div v-if="!prov.models||prov.models.length===0" class="px-5 pb-4 text-xs c-m">{{t('empty')}}</div>
+            <table v-else class="w-full text-xs">
+              <thead><tr class="c-m text-[10px] uppercase tracking-widest">
+                <th class="text-left px-5 pb-2 font-semibold">ID</th>
+                <th class="text-left px-3 pb-2 font-semibold hidden sm:table-cell">Context</th>
+                <th class="text-left px-3 pb-2 font-semibold hidden sm:table-cell">Max Out</th>
+                <th class="text-center px-3 pb-2 font-semibold">{{t('primaryLabel')}}</th>
+                <th class="text-right px-5 pb-2 font-semibold w-24"></th>
+              </tr></thead>
+              <tbody>
+                <tr v-for="m in prov.models" :key="m.id" class="oc-divider border-t oc-row">
+                  <td class="px-5 py-3">
+                    <span class="c-h font-mono text-xs">{{m.id}}</span>
+                  </td>
+                  <td class="c-s px-3 py-3 hidden sm:table-cell">{{formatNum(m.contextWindow)}}</td>
+                  <td class="c-s px-3 py-3 hidden sm:table-cell">{{formatNum(m.maxTokens)}}</td>
+                  <td class="px-3 py-3 text-center">
+                    <button @click="setPrimary(name,m.id)" :class="['w-5 h-5 rounded-full transition inline-flex items-center justify-center',
+                      primary===name+'/'+m.id?'bg-brand':'']"
+                      :style="primary===name+'/'+m.id?'border:2px solid #10b981':'border:2px solid var(--input-border)'">
+                      <svg v-if="primary===name+'/'+m.id" class="w-3 h-3 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                    </button>
+                  </td>
+                  <td class="px-5 py-3 text-right">
+                    <div class="inline-flex items-center gap-1">
+                      <button @click="openEditModel(name,m)" class="oc-icon-btn" :title="t('edit')"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+                      <button @click="confirmDeleteModel(name,m.id)" :disabled="(prov.models?.length||0)<=1" :class="['oc-icon-btn',(prov.models?.length||0)<=1?'opacity-30 cursor-not-allowed':'oc-icon-btn-danger']" :title="(prov.models?.length||0)<=1?t('lastModelTip'):t('delete')"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </transition>
+      </div>
+    </div>
+
+    <div class="step-nav">
+      <button @click="goBack" class="oc-btn oc-btn-ghost">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+        {{t('prevStep')}}
+      </button>
+      <button v-if="hasChanges" @click="openDiffModal" class="oc-btn oc-btn-ghost">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        {{t('previewDiff')}}
+      </button>
+      <button @click="saveAll" :disabled="saving||!hasChanges" class="oc-btn oc-btn-primary">
+        <svg v-if="saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+        <svg v-if="!saving" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+        {{saving?t('saving'):t('saveSync')}}
+      </button>
+    </div>
+
+    <!-- Save bar (when changes exist) -->
+    <div v-if="hasChanges" class="oc-bar fixed bottom-0 left-0 right-0 z-50">
+      <div class="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full" style="background:#f59e0b"></span>
+          <span class="text-xs font-semibold" style="color:#f59e0b">{{t('unsaved')}}</span>
+        </div>
+        <div class="flex gap-2">
+          <button @click="reloadModels" class="oc-btn oc-btn-ghost text-xs">{{t('discard')}}</button>
+          <button @click="saveAll" :disabled="saving" class="oc-btn oc-btn-primary text-xs">
+            <svg v-if="saving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            {{saving?t('saving'):t('saveSync')}}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toasts -->
+    <transition name="fade">
+      <div v-if="saveSuccess" class="oc-toast oc-toast-ok">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>{{saveMessage}}
+      </div>
+    </transition>
+    <transition name="fade">
+      <div v-if="saveErrorMsg" class="oc-toast oc-toast-err">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>{{saveErrorMsg}}
+      </div>
+    </transition>
+  </div>
+
+  <!-- Provider Modal -->
+  <transition name="fade">
+    <div v-if="showProviderModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" :style="'background:var(--overlay)'" @click.self="showProviderModal=false">
+      <div class="oc-modal w-full max-w-md shadow-xl">
+        <div class="px-5 py-4 oc-divider border-b">
+          <div class="c-h text-sm font-semibold">{{editingProvider?t('editProvider'):t('addProvider')}}</div>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <div v-if="!editingProvider">
+            <label class="c-s block text-xs mb-1.5 flex items-center">{{t('name')}}<span class="oc-tip" :data-tip="t('tipProvName')">?</span></label>
+            <div class="flex items-center"><span class="c-m text-xs mr-1">custom-</span><input v-model="providerForm.name" placeholder="my-provider" class="oc-input flex-1 font-mono"></div>
+          </div>
+          <div>
+            <label class="c-s block text-xs mb-1.5 flex items-center">Base URL<span class="oc-tip" :data-tip="t('tipBaseUrl')">?</span></label>
+            <input v-model="providerForm.baseUrl" placeholder="https://api.example.com/v1" class="oc-input font-mono">
+          </div>
+          <div>
+            <label class="c-s block text-xs mb-1.5 flex items-center">API Key<span class="oc-tip" :data-tip="t('tipApiKey')">?</span></label>
+            <input v-model="providerForm.apiKey" type="password" placeholder="sk-..." class="oc-input font-mono">
+          </div>
+          <div>
+            <label class="c-s block text-xs mb-1.5 flex items-center">{{t('apiType')}}<span class="oc-tip" :data-tip="t('tipApiType')">?</span></label>
+            <select v-model="providerForm.api" class="oc-select"><option value="openai-completions">OpenAI Compatible</option><option value="anthropic-messages">Anthropic Compatible</option><option value="openai-codex-responses">OpenAI Codex</option></select>
+          </div>
+          <div v-if="!editingProvider" class="pt-1" style="border-top:1px dashed var(--border)">
+            <label class="c-s block text-xs mb-1.5 flex items-center">{{t('defaultModelId')}}<span class="oc-tip" :data-tip="t('tipDefaultModel')">?</span></label>
+            <input v-model="providerForm.defaultModel" placeholder="gpt-4o" class="oc-input font-mono">
+            <p class="c-m text-[10px] mt-1">{{t('defaultModelHint')}}</p>
+          </div>
+        </div>
+        <div class="px-5 py-3 oc-divider border-t flex justify-end gap-2">
+          <button @click="showProviderModal=false" class="oc-btn oc-btn-ghost text-xs">{{t('cancel')}}</button>
+          <button @click="submitProvider" class="oc-btn oc-btn-primary text-xs">{{editingProvider?t('update'):t('add')}}</button>
+        </div>
+        <p v-if="modalError" class="px-5 pb-3 text-xs text-red-500">{{modalError}}</p>
+      </div>
+    </div>
+  </transition>
+
+  <!-- Model Modal -->
+  <transition name="fade">
+    <div v-if="showModelModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" :style="'background:var(--overlay)'" @click.self="showModelModal=false">
+      <div class="oc-modal w-full max-w-md shadow-xl">
+        <div class="px-5 py-4 oc-divider border-b">
+          <div class="c-h text-sm font-semibold">{{editingModel?t('editModel'):t('addModel')}}</div>
+          <div class="c-s text-xs mt-0.5">Provider: <span class="font-mono">{{modelTargetProvider}}</span></div>
+        </div>
+        <div class="px-5 py-4 space-y-3">
+          <div>
+            <label class="c-s block text-xs mb-1.5 flex items-center">Model ID<span class="oc-tip" :data-tip="t('tipModelId')">?</span></label>
+            <input v-model="modelForm.id" placeholder="gpt-4o" class="oc-input font-mono">
+          </div>
+          <div>
+            <label class="c-s block text-xs mb-1.5 flex items-center">{{t('displayName')}}<span class="oc-tip" :data-tip="t('tipDisplayName')">?</span></label>
+            <input v-model="modelForm.name" :placeholder="(modelForm.id||'model')+' (Custom Provider)'" class="oc-input">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="c-s block text-xs mb-1.5 flex items-center">Context Window<span class="oc-tip" :data-tip="t('tipCtxWindow')">?</span></label>
+              <input v-model.number="modelForm.contextWindow" type="number" class="oc-input">
+            </div>
+            <div>
+              <label class="c-s block text-xs mb-1.5 flex items-center">Max Tokens<span class="oc-tip" :data-tip="t('tipMaxTokens')">?</span></label>
+              <input v-model.number="modelForm.maxTokens" type="number" class="oc-input">
+            </div>
+          </div>
+          <div>
+            <label class="c-s block text-xs mb-1.5 flex items-center">{{t('apiType')}}<span class="oc-tip" :data-tip="t('tipModelApi')">?</span></label>
+            <select v-model="modelForm.api" class="oc-select"><option value="openai-completions">OpenAI Compatible</option><option value="anthropic-messages">Anthropic Compatible</option><option value="openai-codex-responses">OpenAI Codex</option></select>
+          </div>
+        </div>
+        <div class="px-5 py-3 oc-divider border-t flex justify-end gap-2">
+          <button @click="showModelModal=false" class="oc-btn oc-btn-ghost text-xs">{{t('cancel')}}</button>
+          <button @click="submitModel" class="oc-btn oc-btn-primary text-xs">{{editingModel?t('update'):t('add')}}</button>
+        </div>
+        <p v-if="modalError" class="px-5 pb-3 text-xs text-red-500">{{modalError}}</p>
+      </div>
+    </div>
+  </transition>
+
+  <!-- Delete Modal -->
+  <transition name="fade">
+    <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" :style="'background:var(--overlay)'" @click.self="showDeleteModal=false">
+      <div class="oc-modal w-full max-w-sm p-5 shadow-xl">
+        <div class="c-h text-sm font-semibold mb-2">{{t('confirmDelete')}}</div>
+        <p class="c-s text-xs mb-5">{{deleteMessage}}</p>
+        <div class="flex justify-end gap-2">
+          <button @click="showDeleteModal=false" class="oc-btn oc-btn-ghost text-xs">{{t('cancel')}}</button>
+          <button @click="executeDelete" class="oc-btn text-xs text-white" style="background:#ef4444">{{t('delete')}}</button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <!-- Source JSON Modal -->
+  <transition name="fade">
+    <div v-if="showSourceModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" :style="'background:var(--overlay)'" @click.self="showSourceModal=false">
+      <div class="oc-modal w-full max-w-3xl shadow-xl flex flex-col" style="max-height:85vh">
+        <div class="px-5 py-4 oc-divider border-b flex items-center justify-between flex-shrink-0">
+          <div>
+            <div class="c-h text-sm font-semibold">{{t('viewSource')}}</div>
+            <div class="c-m text-[10px] mt-0.5">{{t('sourceHint')}}</div>
+          </div>
+          <button @click="showSourceModal=false" class="oc-icon-btn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+        <div class="flex-1 overflow-hidden px-5 py-3">
+          <div v-if="sourceLoading" class="flex items-center justify-center py-16"><svg class="animate-spin w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></div>
+          <textarea v-else v-model="sourceContent" class="w-full h-full font-mono text-xs leading-relaxed resize-none rounded-lg p-3" style="background:var(--input-bg);border:1px solid var(--input-border);color:var(--text-h);outline:none;min-height:50vh" spellcheck="false"></textarea>
+        </div>
+        <p v-if="sourceError" class="px-5 pb-2 text-xs text-red-500">{{sourceError}}</p>
+        <div class="px-5 py-3 oc-divider border-t flex justify-end gap-2 flex-shrink-0">
+          <button @click="showSourceModal=false" class="oc-btn oc-btn-ghost text-xs">{{t('cancel')}}</button>
+          <button @click="saveSourceConfig" :disabled="sourceSaving" class="oc-btn oc-btn-primary text-xs">
+            <svg v-if="sourceSaving" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            {{sourceSaving?t('saving'):t('saveSource')}}
+          </button>
+        </div>
+      </div>
+    </div>
+  </transition>
+
+  <!-- Diff Modal -->
+  <transition name="fade">
+    <div v-if="showDiffModal" class="fixed inset-0 flex items-center justify-center z-50 p-4" :style="'background:var(--overlay)'" @click.self="showDiffModal=false">
+      <div class="oc-modal w-full max-w-5xl shadow-xl flex flex-col" style="max-height:85vh">
+        <div class="px-5 py-4 oc-divider border-b flex items-center justify-between flex-shrink-0">
+          <div class="c-h text-sm font-semibold">{{t('previewDiff')}}</div>
+          <button @click="showDiffModal=false" class="oc-icon-btn"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg></button>
+        </div>
+        <div class="flex-1 overflow-auto px-5 py-3">
+          <div v-if="diffLoading" class="flex items-center justify-center py-16"><svg class="animate-spin w-6 h-6 text-brand" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></div>
+          <div v-else-if="diffChanges.length===0" class="text-center py-16 c-m text-sm">{{t('noChanges')}}</div>
+          <div v-else class="space-y-2">
+            <div v-for="(c,i) in diffChanges" :key="i" class="flex items-start gap-3 p-3 rounded-lg text-xs" :style="c.type==='add'?'background:rgba(16,185,129,.06)':c.type==='remove'?'background:rgba(239,68,68,.06)':'background:var(--bg-alt)'">
+              <span :class="c.type==='add'?'text-brand':c.type==='remove'?'text-red-500':'c-s'" class="font-semibold text-[10px] uppercase w-14 flex-shrink-0 pt-px">{{c.type==='add'?t('diffAdd'):c.type==='remove'?t('diffRemove'):t('diffModify')}}</span>
+              <div class="min-w-0">
+                <span class="c-h font-medium">{{c.label}}</span>
+                <span v-if="c.detail" class="c-m ml-2">{{c.detail}}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="px-5 py-3 oc-divider border-t flex justify-end gap-2 flex-shrink-0">
+          <button @click="showDiffModal=false" class="oc-btn oc-btn-ghost text-xs">{{t('cancel')}}</button>
+          <button @click="showDiffModal=false;saveAll()" class="oc-btn oc-btn-primary text-xs">{{t('confirmSave')}}</button>
+        </div>
+      </div>
+    </div>
+  </transition>
+</main>
+</div>
+
+<script>
+const I18N={
+  zh:{
+    appName:'OpenClaw 模型配置器',
+    steps:['连接','路径','模型'],
+    s1Title:'连接设置',s1Desc:'选择你的 OpenClaw 实例位置。',
+    s1Help:'选择「本地」直接配置当前机器上的 OpenClaw；选择「远程服务器」通过 SSH 连接远程主机；选择「Docker」连接本机上运行的 Docker 容器（需安装 Docker CLI）。操作系统选项用于匹配容器内的默认路径。',
+    s2Title:'路径检测',s2Desc:'定位你的 OpenClaw 配置文件。',
+    s2Help:'系统自动在默认位置（~/.openclaw/openclaw.json）查找配置文件，同时检测 OPENCLAW_CONFIG_PATH、OPENCLAW_HOME 等环境变量覆盖。如果你的 OpenClaw 安装在非默认路径（如 Docker 或自定义安装），可点击「手动指定路径」输入。',
+    s3Title:'模型配置',
+    s3Help:'在这里管理模型服务商和模型。先添加服务商（填写 API 地址和密钥），再在服务商下添加模型。以下是需要重点关注的字段：',
+    s3HelpUrl:'API 服务地址，不同服务商地址不同',
+    s3HelpKey:'认证密钥，向服务商获取',
+    s3HelpCtx:'模型最大上下文长度，推荐 128,000（可根据模型能力适当调大）',
+    s3HelpMax:'单次最大输出 token 数，推荐 8,192（可根据需求调大）',
+    s3HelpSave:'⚠ 修改后请点击右下角「保存并同步」按钮，否则配置不会写入文件。',
+    local:'本地',localDesc:'配置本机上的 OpenClaw',
+    remote:'远程服务器',remoteDesc:'通过 SSH 连接',
+    dockerDesc:'连接 Docker 容器',dockerConn:'Docker 连接',containerName:'容器名称 / ID',
+    tipContainer:'运行 OpenClaw 的 Docker 容器名称或 ID。需要本机安装 Docker CLI。',
+    dockerCmd:'docker ps --format "{{.Names}}"',
+    dockerHelp1:'查看正在运行的容器：',dockerHelp2:'适用场景',dockerHelp3:'适用于 Docker / Docker Compose 部署的 OpenClaw。配置文件直接在容器内读写，无需挂载 volume。',
+    targetOS:'目标操作系统',
+    sshConn:'SSH 连接',host:'主机',port:'端口',username:'用户名',
+    authMethod:'认证方式',password:'密码',privateKey:'密钥',
+    keyPath:'密钥文件路径',keyPathHint:'~/.ssh/id_rsa（留空使用默认）',
+    nextStep:'下一步',prevStep:'上一步',connecting:'连接中...',
+    scanning:'扫描中...',configFound:'已找到配置文件',configNotFound:'未在默认路径找到',
+    expected:'默认路径',specifyPath:'手动指定路径',pathLabel:'openclaw.json 文件路径',
+    loading:'加载中...',
+    providers:'个服务商',models:'个模型',modelsHeader:'模型列表',primaryLabel:'主模型',
+    addProvider:'添加服务商',editProvider:'编辑服务商',
+    addModel:'添加模型',editModel:'编辑模型',
+    noProviders:'暂无服务商',
+    name:'名称',apiType:'API 类型',displayName:'显示名称',
+    add:'添加',edit:'编辑',update:'更新',delete:'删除',cancel:'取消',
+    confirmDelete:'确认删除',empty:'暂无模型',
+    unsaved:'有未保存的更改',discard:'放弃',saving:'保存中...',saveSync:'保存并同步',
+    toggleTheme:'切换主题',
+    tipHost:'远程服务器的 IP 地址或域名',
+    tipPort:'SSH 端口，默认 22',
+    tipUser:'SSH 登录用户名',
+    tipKeyPath:'本机上的 SSH 私钥文件路径，留空则默认使用 ~/.ssh/id_rsa',
+    tipProvName:'服务商标识名，将自动添加 custom- 前缀',
+    tipBaseUrl:'API 请求地址，如 https://api.openai.com/v1',
+    tipApiKey:'服务商提供的认证密钥，用于 API 鉴权',
+    tipApiType:'API 协议类型。大多数第三方选 OpenAI Compatible；Anthropic 官方/兼容选 Anthropic Compatible',
+    tipModelId:'发送给 API 的模型标识符，如 gpt-4o、claude-sonnet-4-20250514',
+    tipDisplayName:'界面中显示的名称，留空自动生成为「模型ID (Custom Provider)」',
+    tipCtxWindow:'模型可处理的最大输入长度（token 数）。推荐 128,000，能力强的模型可调大',
+    tipMaxTokens:'单次回复的最大输出长度（token 数）。推荐 8,192，有长文需求可调大',
+    tipModelApi:'覆盖服务商默认的 API 协议类型，通常无需修改',
+    tipReasoning:'模型是否支持思维链推理（如 o1、DeepSeek-R1 等具备推理能力的模型）',
+    viewSource:'查看源文件',sourceHint:'API 密钥已脱敏显示，如需修改请填入新值。未修改的密钥保存时会保留原值。',
+    saveSource:'保存 JSON',sourceParseErr:'JSON 格式错误：',sourceSaved:'源文件已保存，配置已重新加载',
+    defaultModelId:'默认模型 ID',defaultModelHint:'每个服务商至少需要一个模型，此处指定首个模型 ID（如 gpt-4o），其余属性使用默认值',
+    tipDefaultModel:'创建服务商时自动添加的首个模型。可在创建后继续添加或编辑更多模型。',
+    lastModelTip:'每个服务商至少保留一个模型',
+    testConn:'测试连接',testOk:'连接成功',testFail:'连接失败',
+    export:'导出',import:'导入',importOk:'导入成功，配置已重新加载',importFail:'导入失败：',importInvalid:'文件不是有效的 JSON',
+    previewDiff:'预览变更',noChanges:'没有检测到变更',confirmSave:'确认保存',
+    diffAdd:'新增',diffRemove:'删除',diffModify:'修改',
+    recentPaths:'最近使用的路径',
+    saveOkMsg:'配置已保存并同步！',
+    saveFailMsg:'保存失败：',
+  },
+  en:{
+    appName:'OpenClaw Model Configurator',
+    steps:['Connect','Path','Models'],
+    s1Title:'Connection Setup',s1Desc:'Choose where your OpenClaw instance is running.',
+    s1Help:'Select "Local" for OpenClaw on this machine; "Remote Server" for SSH connections; "Docker" for a local Docker container (requires Docker CLI). The OS selection helps detect the default config path inside the container.',
+    s2Title:'Path Detection',s2Desc:'Locating your OpenClaw configuration file.',
+    s2Help:'Auto-detects the config file at the default path (~/.openclaw/openclaw.json), and also checks OPENCLAW_CONFIG_PATH, OPENCLAW_HOME env vars. If your OpenClaw is installed elsewhere (e.g. Docker or custom), click "Specify custom path".',
+    s3Title:'Model Configuration',
+    s3Help:'Manage model providers and models here. First add a provider (API URL + key), then add models under it. Key fields to pay attention to:',
+    s3HelpUrl:'API endpoint address, varies by provider',
+    s3HelpKey:'Authentication key from your provider',
+    s3HelpCtx:'Max input context length. Recommended: 128,000 (increase for more capable models)',
+    s3HelpMax:'Max output tokens per response. Recommended: 8,192 (increase for longer outputs)',
+    s3HelpSave:'⚠ Click "Save & Sync" when done — changes are NOT written to file until you save.',
+    local:'Local',localDesc:'Configure on this machine',
+    remote:'Remote Server',remoteDesc:'Connect via SSH',
+    dockerDesc:'Connect to container',dockerConn:'Docker Connection',containerName:'Container Name / ID',
+    tipContainer:'Name or ID of the Docker container running OpenClaw. Requires Docker CLI on this machine.',
+    dockerCmd:'docker ps --format "{{.Names}}"',
+    dockerHelp1:'List running containers:',dockerHelp2:'When to use',dockerHelp3:'For Docker / Docker Compose deployments. Reads and writes config directly inside the container — no volume mount needed.',
+    targetOS:'Target OS',
+    sshConn:'SSH Connection',host:'Host',port:'Port',username:'Username',
+    authMethod:'Auth Method',password:'Password',privateKey:'Private Key',
+    keyPath:'Private Key Path',keyPathHint:'~/.ssh/id_rsa (leave empty for default)',
+    nextStep:'Next',prevStep:'Back',connecting:'Connecting...',
+    scanning:'Scanning...',configFound:'Configuration found',configNotFound:'Not found at default path',
+    expected:'Expected',specifyPath:'Specify custom path',pathLabel:'Path to openclaw.json',
+    loading:'Loading...',
+    providers:'providers',models:'models',modelsHeader:'Models',primaryLabel:'Primary',
+    addProvider:'Add Provider',editProvider:'Edit Provider',
+    addModel:'Add Model',editModel:'Edit Model',
+    noProviders:'No providers configured',
+    name:'Name',apiType:'API Type',displayName:'Display Name',
+    add:'Add',edit:'Edit',update:'Update',delete:'Delete',cancel:'Cancel',
+    confirmDelete:'Confirm Delete',empty:'Empty',
+    unsaved:'Unsaved changes',discard:'Discard',saving:'Saving...',saveSync:'Save & Sync',
+    toggleTheme:'Toggle theme',
+    tipHost:'IP address or domain of the remote server',
+    tipPort:'SSH port, default is 22',
+    tipUser:'SSH login username',
+    tipKeyPath:'Path to SSH private key on this machine. Leave empty to use ~/.ssh/id_rsa',
+    tipProvName:'Provider identifier, custom- prefix added automatically',
+    tipBaseUrl:'API endpoint URL, e.g. https://api.openai.com/v1',
+    tipApiKey:'Authentication key from your provider for API access',
+    tipApiType:'API protocol. Most third-party providers use OpenAI Compatible; for Anthropic use Anthropic Compatible',
+    tipModelId:'Model identifier sent to the API, e.g. gpt-4o, claude-sonnet-4-20250514',
+    tipDisplayName:'Display name in UI. Leave empty to auto-generate as "modelID (Custom Provider)"',
+    tipCtxWindow:'Max input tokens the model can handle. Recommended: 128,000, increase for capable models',
+    tipMaxTokens:'Max output tokens per response. Recommended: 8,192, increase for longer outputs',
+    tipModelApi:"Override provider's default API type. Usually no change needed",
+    tipReasoning:'Whether the model supports chain-of-thought reasoning (e.g. o1, DeepSeek-R1)',
+    viewSource:'View Source',sourceHint:'API keys are masked. Enter new values to change them; unchanged keys are preserved on save.',
+    saveSource:'Save JSON',sourceParseErr:'Invalid JSON: ',sourceSaved:'Source saved, config reloaded',
+    defaultModelId:'Default Model ID',defaultModelHint:'Every provider must have at least one model. Specify the first model ID (e.g. gpt-4o); other fields use defaults.',
+    tipDefaultModel:'The first model created automatically with this provider. You can add or edit more models later.',
+    lastModelTip:'Each provider must have at least one model',
+    testConn:'Test Connection',testOk:'Connection OK',testFail:'Connection Failed',
+    export:'Export',import:'Import',importOk:'Imported successfully, config reloaded',importFail:'Import failed: ',importInvalid:'File is not valid JSON',
+    previewDiff:'Preview Changes',noChanges:'No changes detected',confirmSave:'Confirm Save',
+    diffAdd:'Add',diffRemove:'Remove',diffModify:'Modify',
+    recentPaths:'Recent Paths',
+    saveOkMsg:'Configuration saved and synced!',
+    saveFailMsg:'Save failed: ',
+  }
+};
+
+const{createApp,ref,reactive,computed,onMounted}=Vue;
+createApp({
+  setup(){
+    const token=new URLSearchParams(location.search).get('token')||'';
+    const isDark=ref(localStorage.getItem('oc-theme')!=='light');
+    const lang=ref(localStorage.getItem('oc-lang')||'zh');
+    function t(k){return I18N[lang.value]?.[k]||I18N.en[k]||k;}
+    function toggleLang(){lang.value=lang.value==='zh'?'en':'zh';localStorage.setItem('oc-lang',lang.value);}
+
+    const step=ref(1),maxStep=ref(1),error=ref(''),connected=ref(false),connectionMode=ref('local'),targetOS=ref('linux'),connecting=ref(false);
+    const ssh=reactive({host:'',port:22,user:'root',authType:'password',password:'',keyPath:''});
+    const docker=reactive({container:''});
+    const detecting=ref(false),pathFound=ref(false),detectedPath=ref(''),customPath=ref(''),useCustomPath=ref(false),loadingConfig=ref(false);
+    const providers=ref({}),primary=ref(''),originalJSON=ref(''),expandedProviders=reactive({});
+    const originalProviders=ref({}),originalPrimary=ref('');
+    const showProviderModal=ref(false),editingProvider=ref(null),providerForm=reactive({name:'',baseUrl:'',apiKey:'',api:'openai-completions',defaultModel:''});
+    const showModelModal=ref(false),editingModel=ref(null),modelTargetProvider=ref(''),modelForm=reactive({id:'',name:'',api:'openai-completions',reasoning:false,contextWindow:128000,maxTokens:8192});
+    const showDeleteModal=ref(false),deleteMessage=ref(''),deleteAction=ref(null),modalError=ref('');
+    const saving=ref(false),saveSuccess=ref(false),saveMessage=ref(''),saveErrorMsg=ref('');
+    const showSourceModal=ref(false),sourceContent=ref(''),sourceLoading=ref(false),sourceSaving=ref(false),sourceError=ref('');
+    const testingProvider=ref('');
+    const recentPaths=ref([]);
+    const showDiffModal=ref(false),diffLoading=ref(false),diffChanges=ref([]);
+    const hasChanges=computed(()=>JSON.stringify(providers.value)+primary.value!==originalJSON.value);
+    const totalModels=computed(()=>Object.values(providers.value).reduce((s,p)=>s+(p.models?.length||0),0));
+
+    function toggleTheme(){isDark.value=!isDark.value;localStorage.setItem('oc-theme',isDark.value?'dark':'light');document.documentElement.classList.toggle('dark',isDark.value);}
+    onMounted(()=>{document.documentElement.classList.toggle('dark',isDark.value);});
+
+    function goBack(){
+      if(step.value===2){step.value=1;error.value='';useCustomPath.value=false;}
+      else if(step.value===3){step.value=2;error.value='';}
+    }
+    function goToStep(s){
+      if(s>=1&&s<step.value){step.value=s;error.value='';}
+    }
+
+    async function api(m,p,b){const o={method:m,headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}};if(b)o.body=JSON.stringify(b);const r=await fetch('/api/'+p,o);const d=await r.json();if(!r.ok)throw new Error(d.error||'Request failed');return d;}
+    async function doConnect(){error.value='';connecting.value=true;try{const b={mode:connectionMode.value,os:targetOS.value};if(connectionMode.value==='remote'){b.ssh={host:ssh.host,port:ssh.port,user:ssh.user,authType:ssh.authType};if(ssh.authType==='password')b.ssh.password=ssh.password;else if(ssh.keyPath)b.ssh.keyPath=ssh.keyPath;}else if(connectionMode.value==='docker'){b.docker={container:docker.container};}await api('POST','connect',b);connected.value=true;step.value=2;maxStep.value=Math.max(maxStep.value,2);detectPath();}catch(e){error.value=e.message;}finally{connecting.value=false;}}
+    async function detectPath(){detecting.value=true;try{const d=await api('GET','detect');detectedPath.value=d.path;pathFound.value=d.found;if(d.recentPaths) recentPaths.value=d.recentPaths;if(d.found)customPath.value=d.path;else{customPath.value='';useCustomPath.value=true;}}catch(e){error.value=e.message;}finally{detecting.value=false;}}
+    async function confirmPath(){
+      error.value='';loadingConfig.value=true;
+      const p=useCustomPath.value&&customPath.value?customPath.value:(pathFound.value?detectedPath.value:customPath.value);
+      try{await api('POST','path',{path:p});await loadModels();step.value=3;maxStep.value=Math.max(maxStep.value,3);}catch(e){error.value=e.message;}finally{loadingConfig.value=false;}
+    }
+    async function loadModels(){const d=await api('GET','models');providers.value=d.providers||{};primary.value=d.primary||'';originalProviders.value=JSON.parse(JSON.stringify(d.providers||{}));originalPrimary.value=d.primary||'';originalJSON.value=JSON.stringify(providers.value)+primary.value;}
+    async function reloadModels(){await loadModels();}
+    function toggleProvider(n){expandedProviders[n]=!expandedProviders[n];}
+    function openAddProvider(){editingProvider.value=null;Object.assign(providerForm,{name:'',baseUrl:'',apiKey:'',api:'openai-completions',defaultModel:''});modalError.value='';showProviderModal.value=true;}
+    function openEditProvider(n,p){editingProvider.value=n;Object.assign(providerForm,{name:n,baseUrl:p.baseUrl,apiKey:'',api:p.api,defaultModel:''});modalError.value='';showProviderModal.value=true;}
+    async function submitProvider(){modalError.value='';try{if(editingProvider.value)await api('PUT','providers/'+editingProvider.value,{baseUrl:providerForm.baseUrl,apiKey:providerForm.apiKey||undefined,api:providerForm.api});else{if(!providerForm.defaultModel){modalError.value=t('defaultModelId')+(lang.value==='zh'?' 不能为空':' is required');return;}await api('POST','providers',{name:providerForm.name,baseUrl:providerForm.baseUrl,apiKey:providerForm.apiKey,api:providerForm.api,defaultModel:providerForm.defaultModel});}await loadModels();showProviderModal.value=false;}catch(e){modalError.value=e.message;}}
+    function confirmDeleteProvider(n){deleteMessage.value=lang.value==='zh'?`确定删除服务商 "${n}" 及其所有模型？`:`Delete provider "${n}" and all its models?`;deleteAction.value=async()=>{await api('DELETE','providers/'+n);await loadModels();};showDeleteModal.value=true;}
+    function openAddModel(pn){editingModel.value=null;modelTargetProvider.value=pn;const p=providers.value[pn];Object.assign(modelForm,{id:'',name:'',api:p?.api||'openai-completions',reasoning:false,contextWindow:128000,maxTokens:8192});modalError.value='';showModelModal.value=true;}
+    function openEditModel(pn,m){editingModel.value=m.id;modelTargetProvider.value=pn;Object.assign(modelForm,{...m});modalError.value='';showModelModal.value=true;}
+    async function submitModel(){modalError.value='';try{const b={id:modelForm.id,name:modelForm.name||(modelForm.id+' (Custom Provider)'),api:modelForm.api,reasoning:false,input:['text'],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:modelForm.contextWindow||128000,maxTokens:modelForm.maxTokens||8192};if(editingModel.value)await api('PUT','providers/'+modelTargetProvider.value+'/models/'+editingModel.value,b);else await api('POST','providers/'+modelTargetProvider.value+'/models',b);await loadModels();showModelModal.value=false;}catch(e){modalError.value=e.message;}}
+    function confirmDeleteModel(pn,mid){deleteMessage.value=lang.value==='zh'?`确定从 "${pn}" 中删除模型 "${mid}"？`:`Delete model "${mid}" from "${pn}"?`;deleteAction.value=async()=>{await api('DELETE','providers/'+pn+'/models/'+mid);await loadModels();};showDeleteModal.value=true;}
+    async function executeDelete(){if(deleteAction.value){try{await deleteAction.value();}catch(e){error.value=e.message;}}showDeleteModal.value=false;}
+    async function setPrimary(pn,mid){try{await api('PUT','primary',{model:pn+'/'+mid});primary.value=pn+'/'+mid;}catch(e){error.value=e.message;}}
+    async function saveAll(){
+      saving.value=true;saveErrorMsg.value='';
+      try{
+        const d=await api('POST','save');
+        originalJSON.value=JSON.stringify(providers.value)+primary.value;
+        const n=d.synced?.length||0;
+        saveMessage.value=t('saveOkMsg')+(lang.value==='zh'?` 已同步 ${n} 个 agent。`:` ${n} agent(s) synced.`);
+        saveSuccess.value=true;
+        setTimeout(()=>{saveSuccess.value=false;},4000);
+      }catch(e){
+        saveErrorMsg.value=t('saveFailMsg')+e.message;
+        setTimeout(()=>{saveErrorMsg.value='';},6000);
+      }finally{saving.value=false;}
+    }
+    function resetAll(){if(connected.value)api('POST','disconnect').catch(()=>{});step.value=1;maxStep.value=1;connected.value=false;providers.value={};primary.value='';error.value='';useCustomPath.value=false;}
+    function apiLabel(a){return({'openai-completions':'OpenAI','anthropic-messages':'Anthropic','openai-codex-responses':'Codex'})[a]||a;}
+    function formatNum(n){if(!n)return'0';return n>=1000?(n/1000).toFixed(0)+'k':String(n);}
+
+    async function openSourceModal(){sourceError.value='';sourceLoading.value=true;showSourceModal.value=true;try{const d=await api('GET','rawconfig');sourceContent.value=d.content||'';}catch(e){sourceError.value=e.message;}finally{sourceLoading.value=false;}}
+    async function saveSourceConfig(){sourceError.value='';sourceSaving.value=true;try{JSON.parse(sourceContent.value);}catch(e){sourceError.value=t('sourceParseErr')+e.message;sourceSaving.value=false;return;}try{await api('PUT','rawconfig',{content:sourceContent.value});await loadModels();showSourceModal.value=false;saveMessage.value=t('sourceSaved');saveSuccess.value=true;setTimeout(()=>{saveSuccess.value=false;},4000);}catch(e){sourceError.value=e.message;}finally{sourceSaving.value=false;}}
+
+    async function testProvider(name){testingProvider.value=name;try{const d=await api('POST','test',{provider:name});if(d.ok){saveMessage.value=t('testOk')+' ('+d.latencyMs+'ms)';saveSuccess.value=true;setTimeout(()=>{saveSuccess.value=false;},4000);}else{saveErrorMsg.value=t('testFail')+': '+d.message;setTimeout(()=>{saveErrorMsg.value='';},6000);}}catch(e){saveErrorMsg.value=t('testFail')+': '+e.message;setTimeout(()=>{saveErrorMsg.value='';},6000);}finally{testingProvider.value='';}}
+    function exportConfig(){window.open('/api/export?token='+token,'_blank');}
+    async function handleImportFile(ev){const file=ev.target.files?.[0];if(!file)return;ev.target.value='';const text=await file.text();try{JSON.parse(text);}catch(e){saveErrorMsg.value=t('importInvalid');setTimeout(()=>{saveErrorMsg.value='';},6000);return;}try{await api('POST','import',{content:text});await loadModels();saveMessage.value=t('importOk');saveSuccess.value=true;setTimeout(()=>{saveSuccess.value=false;},4000);}catch(e){saveErrorMsg.value=t('importFail')+e.message;setTimeout(()=>{saveErrorMsg.value='';},6000);}}
+    function buildDiffChanges(){const changes=[];const oldP=originalProviders.value;const newP=providers.value;for(const n in newP){if(!oldP[n])changes.push({type:'add',label:lang.value==='zh'?'服务商: '+n:'Provider: '+n});}for(const n in oldP){if(!newP[n])changes.push({type:'remove',label:lang.value==='zh'?'服务商: '+n:'Provider: '+n});}for(const n in newP){if(oldP[n]){if(oldP[n].baseUrl!==newP[n].baseUrl)changes.push({type:'modify',label:n+' → baseUrl',detail:newP[n].baseUrl});if(oldP[n].api!==newP[n].api)changes.push({type:'modify',label:n+' → api',detail:newP[n].api});const om=(oldP[n].models||[]),nm=(newP[n].models||[]);const oids=new Set(om.map(m=>m.id)),nids=new Set(nm.map(m=>m.id));for(const m of nm){if(!oids.has(m.id))changes.push({type:'add',label:(lang.value==='zh'?'模型: ':'Model: ')+n+'/'+m.id});}for(const m of om){if(!nids.has(m.id))changes.push({type:'remove',label:(lang.value==='zh'?'模型: ':'Model: ')+n+'/'+m.id});}for(const m of nm){if(oids.has(m.id)){const old=om.find(x=>x.id===m.id);if(JSON.stringify(old)!==JSON.stringify(m))changes.push({type:'modify',label:(lang.value==='zh'?'模型: ':'Model: ')+n+'/'+m.id});}}}}if(originalPrimary.value!==primary.value)changes.push({type:'modify',label:(lang.value==='zh'?'主模型':'Primary'),detail:originalPrimary.value+' → '+primary.value});return changes;}
+    function openDiffModal(){diffChanges.value=buildDiffChanges();showDiffModal.value=true;}
+
+    return{isDark,toggleTheme,lang,t,toggleLang,step,maxStep,error,connected,connectionMode,targetOS,connecting,ssh,docker,detecting,pathFound,detectedPath,customPath,useCustomPath,loadingConfig,providers,primary,expandedProviders,hasChanges,totalModels,showProviderModal,editingProvider,providerForm,showModelModal,editingModel,modelTargetProvider,modelForm,showDeleteModal,deleteMessage,modalError,saving,saveSuccess,saveMessage,saveErrorMsg,showSourceModal,sourceContent,sourceLoading,sourceSaving,sourceError,testingProvider,recentPaths,showDiffModal,diffLoading,diffChanges,goBack,goToStep,doConnect,confirmPath,reloadModels,toggleProvider,openAddProvider,openEditProvider,submitProvider,confirmDeleteProvider,openAddModel,openEditModel,submitModel,confirmDeleteModel,executeDelete,setPrimary,saveAll,resetAll,apiLabel,formatNum,openSourceModal,saveSourceConfig,testProvider,exportConfig,handleImportFile,openDiffModal};
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
