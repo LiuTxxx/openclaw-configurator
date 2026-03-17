@@ -600,6 +600,43 @@ func handleSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var req struct {
+		Providers map[string]*saveProvider `json:"providers"`
+		Primary   string                  `json:"primary"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.Providers == nil {
+		jsonError(w, "providers are required", http.StatusBadRequest)
+		return
+	}
+
+	newProviders := make(map[string]*config.Provider, len(req.Providers))
+	for name, sp := range req.Providers {
+		if !providerNameRe.MatchString(name) {
+			jsonError(w, fmt.Sprintf("invalid provider name: %s", name), http.StatusBadRequest)
+			return
+		}
+		apiKey := sp.APIKey
+		if apiKey == "" || config.IsMaskedValue(apiKey) {
+			if existing, ok := state.Config.Models.Providers[name]; ok {
+				apiKey = existing.APIKey
+			}
+		}
+		newProviders[name] = &config.Provider{
+			BaseURL: sp.BaseURL,
+			APIKey:  apiKey,
+			API:     sp.API,
+			Models:  sp.Models,
+		}
+	}
+
+	state.Config.Models.Providers = newProviders
+	state.Config.Agents.Defaults.Model.Primary = req.Primary
+	config.SyncDefaultModels(state.Config)
+
 	if err := config.WriteConfig(state.FS, state.ConfigPath, state.Config); err != nil {
 		jsonError(w, fmt.Sprintf("failed to save: %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -621,6 +658,13 @@ func handleSave(w http.ResponseWriter, r *http.Request) {
 		"saved":  true,
 		"synced": synced,
 	})
+}
+
+type saveProvider struct {
+	BaseURL string         `json:"baseUrl"`
+	APIKey  string         `json:"apiKey"`
+	API     string         `json:"api"`
+	Models  []config.Model `json:"models"`
 }
 
 func isValidURL(u string) bool {

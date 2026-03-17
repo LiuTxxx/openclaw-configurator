@@ -31,11 +31,12 @@ Go to [Releases](../../releases) and grab the file for your system:
 | macOS (Apple Silicon) | `openclaw-configurator-darwin-arm64` |
 | Linux | `openclaw-configurator-linux-amd64` |
 
-### Step 2: Run
+### Step 2: Run & Stop
 
 **Windows:**
 
-Double-click the downloaded `.exe` file. Your browser opens automatically.
+- **Start**: Double-click the `.exe` file — a black command prompt window appears, browser opens automatically
+- **Stop**: **Close that black command prompt window**
 
 > If Windows shows "Windows protected your PC", click "More info" → "Run anyway".
 
@@ -53,6 +54,8 @@ chmod +x ~/Downloads/openclaw-configurator-darwin-*
 ~/Downloads/openclaw-configurator-darwin-amd64    # Intel Mac
 ```
 
+- **Stop**: Press **Ctrl+C** in the terminal
+
 > If you see "cannot verify developer", go to **System Settings > Privacy & Security** and click "Open Anyway".
 >
 > After the first time, you only need the run command (no need to repeat `chmod`).
@@ -68,6 +71,10 @@ Downloaded files usually don't have execute permission. Set it first:
 chmod +x ~/Downloads/openclaw-configurator-linux-amd64
 ~/Downloads/openclaw-configurator-linux-amd64
 ```
+
+- **Stop**: Close the window if double-clicked; press **Ctrl+C** if started from terminal
+
+> **⚠️ Closing the browser tab does NOT stop the program!** The program runs in the terminal/command prompt window — you must close that window or press Ctrl+C. This is not a background service — use it and shut it down.
 
 ### Step 3: Use the Interface
 
